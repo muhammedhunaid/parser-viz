@@ -20,11 +20,11 @@ export function buildLL1Table(grammar: Grammar): ParsingTable {
       const target = table.get(prod.lhs)!;
 
       for (const terminal of firstSet) {
-        if (terminal === "ε") continue;
+        if (terminal === "epsilon") continue;
         setCell(target, terminal, formatRule(prod.lhs, alt), conflicts);
       }
 
-      if (firstSet.has("ε")) {
+      if (firstSet.has("epsilon")) {
         const followSet = follow.get(prod.lhs)!;
         followSet.forEach((terminal) => {
           setCell(target, terminal, formatRule(prod.lhs, alt), conflicts);
@@ -33,7 +33,7 @@ export function buildLL1Table(grammar: Grammar): ParsingTable {
     }
   }
 
-  return { nonterminals, terminals, table, conflicts };
+  return { nonterminals, terminals, table, conflicts, productions: grammar.productions };
 }
 
 function setCell(

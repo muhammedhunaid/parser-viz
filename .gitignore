@@ -2,6 +2,8 @@ node_modules
 .dist
 .dist-ssr
 .vite
+dist
+tsconfig.tsbuildinfo
 .env
 .env.*
 .DS_Store

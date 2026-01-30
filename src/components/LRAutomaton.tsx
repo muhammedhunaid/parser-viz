@@ -3,11 +3,13 @@ import { LRAutomaton } from "../utils/types";
 
 type Props = {
   automaton: LRAutomaton;
+  selectedStateId?: number | null;
+  onSelectState?: (stateId: number) => void;
 };
 
 const size = 560;
 
-export default function LRAutomatonView({ automaton }: Props) {
+export default function LRAutomatonView({ automaton, selectedStateId, onSelectState }: Props) {
   const positions = useMemo(() => {
     const map = new Map<number, { x: number; y: number }>();
     const count = automaton.states.length || 1;
@@ -63,9 +65,30 @@ export default function LRAutomatonView({ automaton }: Props) {
         {automaton.states.map((state) => {
           const pos = positions.get(state.id);
           if (!pos) return null;
+          const isActive = selectedStateId === state.id;
           return (
-            <g key={state.id}>
-              <circle cx={pos.x} cy={pos.y} r={22} fill="rgba(124, 240, 255, 0.9)" />
+            <g
+              key={state.id}
+              onClick={() => onSelectState?.(state.id)}
+              onKeyDown={(event) => {
+                if (!onSelectState) return;
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelectState(state.id);
+                }
+              }}
+              tabIndex={onSelectState ? 0 : undefined}
+              role={onSelectState ? "button" : undefined}
+              aria-pressed={onSelectState ? isActive : undefined}
+              aria-label={onSelectState ? `State q${state.id}` : undefined}
+              style={{ cursor: onSelectState ? "pointer" : "default" }}
+            >
+              <circle
+                cx={pos.x}
+                cy={pos.y}
+                r={22}
+                fill={isActive ? "rgba(124, 255, 166, 0.95)" : "rgba(124, 240, 255, 0.9)"}
+              />
               <text x={pos.x} y={pos.y + 4} fontSize={12} textAnchor="middle" fill="#0b0f14">
                 q{state.id}
               </text>

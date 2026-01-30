@@ -1,4 +1,4 @@
-import { Grammar, Production, ValidationReport } from "./types";
+import { AnalysisReport, Grammar, Production, ValidationReport } from "./types";
 
 export class GrammarParseError extends Error {
   constructor(message: string) {
@@ -160,6 +160,28 @@ export function getFirstSets(grammar: Grammar): Map<string, Set<string>> {
   return first;
 }
 
+export function getNullableNonterminals(grammar: Grammar): Set<string> {
+  const nullable = new Set<string>();
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+    for (const prod of grammar.productions) {
+      for (const alt of prod.rhs) {
+        const isNullable =
+          alt.length === 0 ||
+          alt.every((symbol) => symbol === "epsilon" || nullable.has(symbol));
+        if (isNullable && !nullable.has(prod.lhs)) {
+          nullable.add(prod.lhs);
+          changed = true;
+        }
+      }
+    }
+  }
+
+  return nullable;
+}
+
 export function getFollowSets(
   grammar: Grammar,
   first: Map<string, Set<string>>
@@ -196,6 +218,13 @@ export function getFollowSets(
   }
 
   return follow;
+}
+
+export function buildAnalysisReport(grammar: Grammar): AnalysisReport {
+  const first = getFirstSets(grammar);
+  const follow = getFollowSets(grammar, first);
+  const nullable = [...getNullableNonterminals(grammar)];
+  return { nullable, first, follow };
 }
 
 export function firstOfSequence(
