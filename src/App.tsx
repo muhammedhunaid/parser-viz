@@ -49,6 +49,7 @@ export default function App() {
   const [activeStep, setActiveStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [traceSummary, setTraceSummary] = useState<string | undefined>(undefined);
+  const [parseError, setParseError] = useState<string | null>(null);
   const [showTree, setShowTree] = useState(true);
   const [showTable, setShowTable] = useState(true);
   const [showAutomaton, setShowAutomaton] = useState(true);
@@ -69,6 +70,7 @@ export default function App() {
 
   const onParse = () => {
     try {
+      setParseError(null);
       const grammar = parseGrammar(grammarText);
       const validation = validateGrammar(grammar);
       if (validation.errors.length > 0) {
@@ -95,6 +97,8 @@ export default function App() {
     } catch (error) {
       setSteps([]);
       setTraceSummary(undefined);
+      setParseError(error instanceof Error ? error.message : String(error));
+      console.error("Parse error:", error);
     }
   };
 
@@ -211,6 +215,7 @@ export default function App() {
               {validationReport.errors.length > 0 && (
                 <div className="error-text">Fix validation errors to run the parser.</div>
               )}
+              {parseError && <div className="error-text">Parse error: {parseError}</div>}
             </div>
           </div>
         </div>

@@ -15,7 +15,7 @@ export default function AnalysisPanel({ report }: Props) {
       <h2>Grammar Analysis</h2>
       <div className="card" style={{ marginBottom: 12 }}>
         <div className="hint">Nullable Nonterminals</div>
-        <div>{report.nullable.length > 0 ? report.nullable.sort().join(", ") : "None"}</div>
+        <div>{report.nullable.length > 0 ? [...report.nullable].sort().join(", ") : "None"}</div>
       </div>
       <div className="card" style={{ marginBottom: 12 }}>
         <div className="hint">FIRST Sets</div>

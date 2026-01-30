@@ -67,7 +67,22 @@ export default function LRAutomatonView({ automaton, selectedStateId, onSelectSt
           if (!pos) return null;
           const isActive = selectedStateId === state.id;
           return (
-            <g key={state.id} onClick={() => onSelectState?.(state.id)} style={{ cursor: "pointer" }}>
+            <g
+              key={state.id}
+              onClick={() => onSelectState?.(state.id)}
+              onKeyDown={(event) => {
+                if (!onSelectState) return;
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelectState(state.id);
+                }
+              }}
+              tabIndex={onSelectState ? 0 : undefined}
+              role={onSelectState ? "button" : undefined}
+              aria-pressed={onSelectState ? isActive : undefined}
+              aria-label={onSelectState ? `State q${state.id}` : undefined}
+              style={{ cursor: onSelectState ? "pointer" : "default" }}
+            >
               <circle
                 cx={pos.x}
                 cy={pos.y}
