@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import ExportButton from "./components/ExportButton";
+import AnalysisPanel from "./components/AnalysisPanel";
 import GrammarInput from "./components/GrammarInput";
 import LRAutomatonView from "./components/LRAutomaton";
+import LRStateInspector from "./components/LRStateInspector";
 import ParseSteps from "./components/ParseSteps";
 import ParseTree from "./components/ParseTree";
 import ParsingTableView from "./components/ParsingTable";
 import ParserSelector from "./components/ParserSelector";
 import StringInput from "./components/StringInput";
-import { parseGrammar, validateGrammar } from "./utils/grammarParser";
-import { LRAutomaton, ParseStep, ParsingTable } from "./utils/types";
+import { buildAnalysisReport, parseGrammar, validateGrammar } from "./utils/grammarParser";
+import { buildLL1Trace } from "./utils/ll1Trace";
+import { AnalysisReport, LRAutomaton, ParseStep, ParsingTable } from "./utils/types";
 import { buildArtifacts, buildDemoSteps, ParserType, tokenizeInput } from "./utils/viewModel";
 
 type TreeNode = {
@@ -45,9 +48,13 @@ export default function App() {
   const [tree, setTree] = useState<TreeNode | null>(null);
   const [activeStep, setActiveStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [traceSummary, setTraceSummary] = useState<string | undefined>(undefined);
   const [showTree, setShowTree] = useState(true);
   const [showTable, setShowTable] = useState(true);
   const [showAutomaton, setShowAutomaton] = useState(true);
+  const [showAnalysis, setShowAnalysis] = useState(true);
+  const [showInspector, setShowInspector] = useState(true);
+  const [selectedStateId, setSelectedStateId] = useState<number | null>(null);
 
   const tokens = useMemo(() => tokenizeInput(inputText), [inputText]);
 
@@ -71,12 +78,23 @@ export default function App() {
       const artifacts = buildArtifacts(grammar, parserType);
       setTable(artifacts.table as ParsingTable | null);
       setAutomaton(artifacts.automaton as LRAutomaton | null);
-      const demoSteps = buildDemoSteps(tokens, parserType);
-      setSteps(demoSteps);
+      if (parserType === "ll1" && artifacts.table) {
+        const trace = buildLL1Trace(grammar, artifacts.table as ParsingTable, tokens);
+        setSteps(trace.steps);
+        setTraceSummary(trace.accepted ? "Accepted by LL(1) table." : `Rejected: ${trace.error}`);
+      } else {
+        const demoSteps = buildDemoSteps(tokens, parserType);
+        setSteps(demoSteps);
+        setTraceSummary("Demo trace (LL(1) produces exact trace).");
+      }
       setActiveStep(0);
       setTree(buildDemoTree(grammar.startSymbol, tokens));
+      if (artifacts.automaton?.states?.length) {
+        setSelectedStateId(artifacts.automaton.states[0].id);
+      }
     } catch (error) {
       setSteps([]);
+      setTraceSummary(undefined);
     }
   };
 
@@ -92,6 +110,15 @@ export default function App() {
       return validateGrammar(grammar);
     } catch (error) {
       return { errors: [error instanceof Error ? error.message : String(error)], warnings: [] };
+    }
+  }, [grammarText]);
+
+  const analysisReport: AnalysisReport | null = useMemo(() => {
+    try {
+      const grammar = parseGrammar(grammarText);
+      return buildAnalysisReport(grammar);
+    } catch {
+      return null;
     }
   }, [grammarText]);
 
@@ -158,6 +185,20 @@ export default function App() {
               >
                 Tree
               </button>
+              <button
+                className={`chip ${showAnalysis ? "active" : ""}`}
+                type="button"
+                onClick={() => setShowAnalysis((prev) => !prev)}
+              >
+                Analysis
+              </button>
+              <button
+                className={`chip ${showInspector ? "active" : ""}`}
+                type="button"
+                onClick={() => setShowInspector((prev) => !prev)}
+              >
+                Inspector
+              </button>
             </div>
           </div>
           <div className="panel fade-in">
@@ -175,12 +216,23 @@ export default function App() {
         </div>
 
         <div className="grid-panels">
+          {showAnalysis && analysisReport && <AnalysisPanel report={analysisReport} />}
           {showTable && table && <ParsingTableView table={table} />}
-          {showAutomaton && automaton && <LRAutomatonView automaton={automaton} />}
+          {showAutomaton && automaton && (
+            <LRAutomatonView
+              automaton={automaton}
+              selectedStateId={selectedStateId}
+              onSelectState={setSelectedStateId}
+            />
+          )}
+          {showInspector && automaton && (
+            <LRStateInspector automaton={automaton} selectedStateId={selectedStateId} />
+          )}
           <ParseSteps
             steps={steps}
             activeIndex={activeStep}
             isPlaying={isPlaying}
+            summary={traceSummary}
             onNext={() => setActiveStep((prev) => Math.min(prev + 1, steps.length - 1))}
             onPrev={() => setActiveStep((prev) => Math.max(prev - 1, 0))}
             onTogglePlay={() => setIsPlaying((prev) => !prev)}

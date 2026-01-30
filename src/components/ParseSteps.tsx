@@ -4,6 +4,7 @@ type Props = {
   steps: ParseStep[];
   activeIndex: number;
   isPlaying: boolean;
+  summary?: string;
   onNext: () => void;
   onPrev: () => void;
   onTogglePlay: () => void;
@@ -13,6 +14,7 @@ export default function ParseSteps({
   steps,
   activeIndex,
   isPlaying,
+  summary,
   onNext,
   onPrev,
   onTogglePlay,
@@ -20,6 +22,7 @@ export default function ParseSteps({
   return (
     <div className="panel fade-in">
       <h2>Parse Timeline</h2>
+      {summary && <div className="hint" style={{ marginBottom: 10 }}>{summary}</div>}
       {steps.length === 0 ? (
         <div className="hint">Run a parse to see steps.</div>
       ) : (

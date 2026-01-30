@@ -15,6 +15,7 @@ export type ParsingTable = {
   terminals: string[];
   table: Map<string, Map<string, string>>;
   conflicts: string[];
+  productions: Production[];
 };
 
 export type LRItem = {
@@ -49,4 +50,10 @@ export type ParseStep = {
 export type ValidationReport = {
   errors: string[];
   warnings: string[];
+};
+
+export type AnalysisReport = {
+  nullable: string[];
+  first: Map<string, Set<string>>;
+  follow: Map<string, Set<string>>;
 };
